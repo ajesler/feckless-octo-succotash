@@ -9,7 +9,7 @@
       var storedState = localStorage.getItem('elm-config-state');
       var startingState = storedState ? JSON.parse(storedState) : null;
 
-      var app = Elm.fullscreen(Elm.OptionsEditor, { getStorage: startingState });
+      var app = Elm.fullscreen(Elm.App, { getStorage: startingState });
 
       app.ports.setStorage.subscribe(function(state) {
           localStorage.setItem('elm-config-state', JSON.stringify(state));
@@ -17,4 +17,3 @@
     </script>
   </body>
 </html>
-

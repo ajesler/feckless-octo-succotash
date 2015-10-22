@@ -1,5 +1,6 @@
-module App where
+module OptionsEditor where
 
+import Jenkins
 import Debug
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -10,26 +11,14 @@ import Signal exposing (Signal, Address)
 import Task
 import Effects exposing (Effects, Never)
 import StartApp
-import Date exposing (..)
-import Time
 
 
 ------------------------------------------------------------------------------
 -- Things we're working with here
 ------------------------------------------------------------------------------
+type alias JenkinsConfig = Jenkins.Config
 
-type alias Config =
-  { serverURL : String
-  , jobNames : List String
-  , buildOnBranchChange : Bool
-  }
-
-type alias Model = Config
-
-emptyModel : Model
-emptyModel = emptyConfig
-
-emptyConfig : Config
+emptyConfig : JenkinsConfig
 emptyConfig = { serverURL = "https://jenkins.example/"
               , jobNames = [ "job1", "job2" ]
               , buildOnBranchChange = True
@@ -43,13 +32,15 @@ type Action
   = NoOp
   | AddJobName String
   | DeleteJobName String
+  | SetBuildOnBranchChange Bool
 
-update : Action -> Model -> (Model, Effects Action)
+update : Action -> JenkinsConfig -> (JenkinsConfig, Effects Action)
 update action model =
   case action of
     NoOp -> noFx model
     AddJobName name -> noFx { model | jobNames <- (List.append model.jobNames [name]) }
     DeleteJobName name -> noFx { model | jobNames <- List.filter (\jobname -> jobname /= name) model.jobNames }
+    SetBuildOnBranchChange willTriggerBuild -> noFx { model | buildOnBranchChange <- willTriggerBuild }
 
 noFx : a -> (a, Effects b)
 noFx m = (m, Effects.none)
@@ -58,10 +49,10 @@ noFx m = (m, Effects.none)
 -- What things look like
 ------------------------------------------------------------------------------
 
-view : Address Action -> Model -> Html
+view : Address Action -> JenkinsConfig -> Html
 view address model = configView address model
 
-configView : Address Action -> Config -> Html
+configView : Address Action -> JenkinsConfig -> Html
 configView address config =
   div []
       [
@@ -85,7 +76,8 @@ configView address config =
                 label [] [ text "Trigger build on branch change"
                            , input [ class "form-control"
                                    , type' "checkbox"
-                                   , checked config.buildOnBranchChange ] []
+                                   , checked config.buildOnBranchChange
+                                   , onClick address (SetBuildOnBranchChange (not config.buildOnBranchChange)) ] []
                           ]
                 ]
       ]
@@ -142,17 +134,21 @@ is13 code =
 -- decodeDate = Json.customDecoder Json.string Date.fromString
 
 -- interactions with localStorage to save the model
-port getStorage : Maybe Model
+port getStorage : Maybe JenkinsConfig
 
-port setStorage : Signal Model
+port setStorage : Signal JenkinsConfig
 port setStorage = app.model
+
+initialModel : JenkinsConfig
+initialModel =
+  Maybe.withDefault emptyConfig getStorage
 
 ------------------------------------------------------------------------------
 -- How things start up and run
 ------------------------------------------------------------------------------
 
 app = StartApp.start
-      { init = ((Maybe.withDefault emptyModel getStorage), Effects.none)
+      { init = (initialModel, Effects.none)
       , update = update
       , view = view
       , inputs = []
