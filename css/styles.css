@@ -1,3 +1,18 @@
-.config-option-group {
-  border: 1px solid black;
+body {
+  width: 400px;
+  padding: 30px;
+}
+
+#popup {
+  padding: 10px;
+}
+
+#icon {
+   height: 48px;
+   width: 48px;
+}
+
+#messages {
+  margin: 10px;
+  padding: 5px;
 }

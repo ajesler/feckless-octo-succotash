@@ -18,12 +18,6 @@ import StartApp
 ------------------------------------------------------------------------------
 type alias JenkinsConfig = Jenkins.Config
 
-emptyConfig : JenkinsConfig
-emptyConfig = { serverURL = "https://jenkins.example/"
-              , jobNames = [ "job1", "job2" ]
-              , buildOnBranchChange = True
-              }
-
 ------------------------------------------------------------------------------
 -- Things we can do
 ------------------------------------------------------------------------------
@@ -141,7 +135,7 @@ port setStorage = app.model
 
 initialModel : JenkinsConfig
 initialModel =
-  Maybe.withDefault emptyConfig getStorage
+  Maybe.withDefault Jenkins.emptyConfig getStorage
 
 ------------------------------------------------------------------------------
 -- How things start up and run

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <link rel="stylesheet" type="text/css" href="./css/bootstrap.min.css"/>
     <link rel="stylesheet" type="text/css" href="./css/styles.css"/>
     <script type="text/javascript" src="elm.js"></script>
   </head>
@@ -9,11 +10,7 @@
       var storedState = localStorage.getItem('elm-config-state');
       var startingState = storedState ? JSON.parse(storedState) : null;
 
-      var app = Elm.fullscreen(Elm.App, { getStorage: startingState });
-
-      app.ports.setStorage.subscribe(function(state) {
-          localStorage.setItem('elm-config-state', JSON.stringify(state));
-      });
+      var app = Elm.fullscreen(Elm.BranchManager, { getStorage: startingState });
     </script>
   </body>
 </html>
