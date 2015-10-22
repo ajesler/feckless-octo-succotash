@@ -42,12 +42,14 @@ emptyConfig = { serverURL = "https://jenkins.example/"
 type Action
   = NoOp
   | AddJobName String
+  | DeleteJobName String
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
     NoOp -> noFx model
-    AddJobName name -> noFx { model | jobNames <- (name :: model.jobNames) }
+    AddJobName name -> noFx { model | jobNames <- (List.append model.jobNames [name]) }
+    DeleteJobName name -> noFx { model | jobNames <- List.filter (\jobname -> jobname /= name) model.jobNames }
 
 noFx : a -> (a, Effects b)
 noFx m = (m, Effects.none)
@@ -59,40 +61,57 @@ noFx m = (m, Effects.none)
 view : Address Action -> Model -> Html
 view address model = configView address model
 
-
 configView : Address Action -> Config -> Html
 configView address config =
   div []
       [
-       div [ class "input-group" ]
+       div [ class "config-option-group" ]
            [ label [] [ text "Jenkins server" ]
            , input [ class "form-control"
                    , placeholder "Jenkins server root URL"
                    , type' "url"
                    , value config.serverURL ] []
            ]
-      , ul [] (List.map (\n -> li [] [jobNameView address n]) config.jobNames)
-      , input [ class "form-control"
-              , placeholder "Job name to add"
-              , type' "text"
-              , on "change" targetValue (Signal.message address << AddJobName)
-              , value "" --, value (Maybe.withDefault config.newJobName "")
-              ] []
-      , label [] [ text "Trigger build on branch change"
-                 , input [ class "form-control"
-                         , type' "checkbox"
-                         , checked config.buildOnBranchChange ] []
+      , div [class "config-option-group"]
+        [ ul [] (List.map (\n -> li [] [jobNameView address n]) config.jobNames)
+        , input [ class "form-control"
+                , placeholder "Job name to add"
+                , type' "text"
+                , on "change" targetValue (Signal.message address << AddJobName)
+                , value "" --, value (Maybe.withDefault config.newJobName "")
+                ] []
+        ]
+      , div [class "config-option-group"] [
+                label [] [ text "Trigger build on branch change"
+                           , input [ class "form-control"
+                                   , type' "checkbox"
+                                   , checked config.buildOnBranchChange ] []
+                          ]
                 ]
       ]
 
 jobNameView : Address Action -> String -> Html
 jobNameView address jobname =
-  span [] [ text jobname ]
+  li []
+        [ span [] [ text jobname ]
+        , button [ onClick address (DeleteJobName jobname) ] [ text "delete" ]
+        ]
 
+onEnter : Address a -> a -> Attribute
+onEnter address value =
+    on "keydown"
+      (Json.customDecoder keyCode is13)
+      (\_ -> Signal.message address value)
+
+
+is13 : Int -> Result String ()
+is13 code =
+  if code == 13 then Ok () else Err "not the right key code"
 
 ------------------------------------------------------------------------------
 -- Backend interaction
 ------------------------------------------------------------------------------
+
 
 -- getCalendarNames : Effects Action
 -- getCalendarNames =
@@ -122,12 +141,18 @@ jobNameView address jobname =
 -- decodeDate : Json.Decoder Date
 -- decodeDate = Json.customDecoder Json.string Date.fromString
 
+-- interactions with localStorage to save the model
+port getStorage : Maybe Model
+
+port setStorage : Signal Model
+port setStorage = app.model
+
 ------------------------------------------------------------------------------
 -- How things start up and run
 ------------------------------------------------------------------------------
 
 app = StartApp.start
-      { init = (emptyModel, Effects.none)
+      { init = ((Maybe.withDefault emptyModel getStorage), Effects.none)
       , update = update
       , view = view
       , inputs = []
