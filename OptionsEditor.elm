@@ -24,6 +24,7 @@ type alias JenkinsConfig = Jenkins.Config
 
 type Action
   = NoOp
+  | SetServerURL String
   | AddJobName String
   | DeleteJobName String
   | SetBuildOnBranchChange Bool
@@ -32,6 +33,7 @@ update : Action -> JenkinsConfig -> (JenkinsConfig, Effects Action)
 update action model =
   case action of
     NoOp -> noFx model
+    SetServerURL url -> noFx { model | serverURL <- url }
     AddJobName name -> noFx { model | jobNames <- (List.append model.jobNames [name]) }
     DeleteJobName name -> noFx { model | jobNames <- List.filter (\jobname -> jobname /= name) model.jobNames }
     SetBuildOnBranchChange willTriggerBuild -> noFx { model | buildOnBranchChange <- willTriggerBuild }
@@ -55,7 +57,8 @@ configView address config =
            , input [ class "form-control"
                    , placeholder "Jenkins server root URL"
                    , type' "url"
-                   , value config.serverURL ] []
+                   , value config.serverURL
+                   , on "change" targetValue (Signal.message address << SetServerURL)] []
            ]
       , div [class "config-option-group"]
         [ ul [] (List.map (\n -> li [] [jobNameView address n]) config.jobNames)
