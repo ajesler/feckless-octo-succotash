@@ -63,7 +63,7 @@ configView address config =
                 , placeholder "Job name to add"
                 , type' "text"
                 , on "change" targetValue (Signal.message address << AddJobName)
-                , value "" --, value (Maybe.withDefault config.newJobName "")
+                , value ""
                 ] []
         ]
       , div [class "config-option-group"] [
