@@ -96,38 +96,9 @@ is13 code =
 
 ------------------------------------------------------------------------------
 -- Backend interaction
+-- interactions with localStorage to save the model
 ------------------------------------------------------------------------------
 
-
--- getCalendarNames : Effects Action
--- getCalendarNames =
---   Http.get (Json.list Json.string) "/api/room_names"
---     |> Task.toMaybe
---     |> Task.map SetCalendarNames
---     |> Effects.task
-
--- getCalendarData : String -> Effects Action
--- getCalendarData roomName =
---   Http.get (decodeCalendarData roomName) (Http.url "/api/room_schedule" [("roomName", roomName)])
---     |> Task.toMaybe
---     |> Task.map (SetCalendarSlots roomName)
---     |> Effects.task
-
-
--- decodeCalendarData : String -> Json.Decoder (List TimeSlot)
--- decodeCalendarData roomName = Json.at ["calendars", roomName, "busy"] (Json.list decodeTimeSlot)
-
--- decodeTimeSlot : Json.Decoder TimeSlot
--- decodeTimeSlot = Json.object4 TimeSlot
---                  ("id" := Json.string)
---                  ("title" := Json.maybe Json.string)
---                  ("start" := decodeDate)
---                  ("end" := decodeDate)
-
--- decodeDate : Json.Decoder Date
--- decodeDate = Json.customDecoder Json.string Date.fromString
-
--- interactions with localStorage to save the model
 port getStorage : Maybe JenkinsConfig
 
 port setStorage : Signal JenkinsConfig

@@ -9,38 +9,86 @@ import Task
 import Effects exposing (Effects, Never)
 import String
 import StartApp
+import Regex
+import Http
+
+type alias Job = {
+  name : String
+  , branch : String
+}
 
 type alias Model = {
   config : Maybe Jenkins.Config
+  , branchName : String
+  , jobs : List Job
 }
 
 type Action
   = NoOp
-  | SetBranchName String
+  | EditedBranchName String
   | TriggerBuild String
+  | ApplyBranchName
+  | BranchUpdated (Result String String)
+  | FoundJobs (List Job)
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
     NoOp -> noFx model
-    SetBranchName name -> noFx model
+    EditedBranchName name -> noFx { model | branchName <- name }
     TriggerBuild name -> noFx model
+    ApplyBranchName -> noFx { model | branchName <- "" }
+    FoundJobs jobs -> noFx { model | jobs <- jobs }
 
 noFx : a -> (a, Effects b)
 noFx m = (m, Effects.none)
 
+updateJobs : Model -> Effects Action
+updateJobs model =
+  case model.config of
+    Nothing -> Effects.none
+    Just config -> getJobs config
+                     |> Effects.map (FoundJobs << Maybe.withDefault [])
+
+getJobs : Jenkins.Config -> Effects (Maybe (List Job))
+getJobs config =
+  List.map (getBranchNameForJob config) config.jobNames
+   |> Task.sequence
+   |> Task.toMaybe
+   |> Task.map (Maybe.map (List.filterMap identity))
+   |> Effects.task
+
+getBranchNameForJob : Jenkins.Config -> String -> Task.Task Http.Error (Maybe Job)
+getBranchNameForJob config jobName =
+  Http.getString (String.join "/" [config.serverURL, "view/All/job", jobName, "config.xml"])
+    |> Task.toMaybe
+    |> Task.map (Maybe.map (Job jobName) << extractBranchName)
+
+
+extractBranchName : Maybe String -> Maybe String
+extractBranchName xml =
+  case xml of
+    Nothing -> Nothing
+    Just input ->
+      let regex = Regex.regex "<hudson.plugins.git.BranchSpec><name>(.*?)</name></hudson.plugins.git.BranchSpec>" in
+      Regex.find (Regex.AtMost 1) regex input -- [RegexMatch]
+        |> List.concatMap .submatches  -- [Just a]
+        |> List.filterMap identity
+        |> List.head
+
 view : Address Action -> Model -> Html
-view address model = 
+view address model =
   div [] [
     case model.config of
       Nothing     -> div [] [
         text "No config found"
       ]
       Just config -> div [] [
-        (headerView address config)
+        headerView address config
         , div [] [ text (String.join ", " config.jobNames) ]
         , messagesView address model
-        , branchNameInputView address
+        , jobsView address model.jobs
+        , branchNameInputView address model
       ]
     , settingsLinkView address
   ]
@@ -59,17 +107,40 @@ headerView address config =
       ]
   ]
 
+jobsView : Address Action -> List Job -> Html
+jobsView address jobs =
+  table [class "table"] ([
+    tr [] [
+      th [] [ text "Job Name" ]
+      , th [] [ text "Branch" ]
+    ]
+  ] ++ (List.map (jobRowView address) jobs))
+
+jobRowView : Address Action -> Job -> Html
+jobRowView address job =
+  tr [] [
+    td [] [ text job.name ]
+    , td [] [ text job.branch ]
+  ]
+
 messagesView : Address Action -> Model -> Html
 messagesView address model =
   div [class "row"] [ p [ id "messages" ] [] ]
 
-branchNameInputView : Address Action -> Html
-branchNameInputView address =
+branchNameInputView : Address Action -> Model -> Html
+branchNameInputView address model =
   div [class "row"] [
     div [class "input-group"] [
-      input [ type' "text", id "branchName", class "form-control", placeholder "branch-name" ] []
+      input [ type' "text"
+            , id "branchName"
+            , class "form-control"
+            , placeholder "branch-name"
+            , value model.branchName
+            , (on "input" targetValue (Signal.message address << EditedBranchName)) ] []
       , span [class "input-group-btn"] [
-        button [id "updateButton", class "btn btn-primary"] [ text "Update Jobs" ]
+        button [id "updateButton"
+                , class "btn btn-primary"
+                , onClick address ApplyBranchName ] [ text "Update Jobs" ]
       ]
     ]
   ]
@@ -82,8 +153,9 @@ settingsLinkView address =
 
 port getStorage : Maybe Jenkins.Config
 
-app = StartApp.start
-      { init = ({ config = getStorage}, Effects.none)
+app = let initialModel = { config = getStorage, branchName = "", jobs = [] } in
+  StartApp.start
+      { init = (initialModel, updateJobs initialModel)
       , update = update
       , view = view
       , inputs = []

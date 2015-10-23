@@ -7,7 +7,10 @@ type alias Config =
   }
 
 emptyConfig : Config
-emptyConfig = { serverURL = "https://jenkins.example/"
+emptyConfig = { serverURL = "https://jenkins.example"
               , jobNames = [ "job1", "job2" ]
               , buildOnBranchChange = True
               }
+
+--getJobConfig : String -> Effects Action
+--getJobConfig jobName =
