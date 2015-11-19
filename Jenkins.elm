@@ -59,7 +59,7 @@ updateJobConfig config branchName jobName =
       `andThen` \xml ->
     succeed (replaceBranchName xml branchName)
       `andThen` \updatedXml ->
-    postJobConfigString configUrl jobName
+    postJobConfigString configUrl updatedXml
 
 getBranchNameForJob : Config -> String -> Task.Task Http.Error (Maybe Job)
 getBranchNameForJob config jobName =

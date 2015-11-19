@@ -26,7 +26,7 @@ type Action
   | EditedBranchName String
   | TriggerBuild String
   | ApplyBranchName
-  | BranchUpdated (Result String String)
+  | JobsUpdated (List String)
   | FoundJobs (List Job)
 
 update : Action -> Model -> (Model, Effects Action)
@@ -36,7 +36,7 @@ update action model =
     EditedBranchName name -> noFx { model | branchName = name }
     TriggerBuild name -> noFx model
     ApplyBranchName -> applyNewBranchName model
-    BranchUpdated result -> noFx model
+    JobsUpdated jobs -> noFx model
     FoundJobs jobs -> noFx { model | jobs = jobs }
 
 noFx : a -> (a, Effects b)
@@ -51,11 +51,15 @@ updateJobs model =
 
 applyNewBranchName : Model -> (Model, Effects Action)
 applyNewBranchName model =
-  let
-    newModel = { model | branchName = ""}
-    effect = Effects.none
-  in
-    (newModel, effect)
+  case model.config of
+    Nothing -> (model, Effects.none)
+    Just config ->
+      let
+        newModel = { model | branchName = ""}
+        effect = updateJobConfigs config model.branchName
+          |> Effects.map  (JobsUpdated << Maybe.withDefault [])
+      in
+        (newModel, effect)
 
 -- VIEWS
 
