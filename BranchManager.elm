@@ -1,6 +1,6 @@
 module BranchManager where
 
-import Jenkins
+import Jenkins exposing (Config, Job, emptyConfig, getJobs)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -9,19 +9,17 @@ import Task
 import Effects exposing (Effects, Never)
 import String
 import StartApp
-import Regex
-import Http
+import Task exposing (Task, andThen, mapError, succeed, fail)
 
-type alias Job = {
-  name : String
-  , branch : String
-}
+-- DATA TYPES
 
 type alias Model = {
   config : Maybe Jenkins.Config
   , branchName : String
-  , jobs : List Job
+  , jobs : List Jenkins.Job
 }
+
+-- ACTIONS
 
 type Action
   = NoOp
@@ -37,7 +35,7 @@ update action model =
     NoOp -> noFx model
     EditedBranchName name -> noFx { model | branchName <- name }
     TriggerBuild name -> noFx model
-    ApplyBranchName -> noFx { model | branchName <- "" }
+    ApplyBranchName -> applyNewBranchName model
     FoundJobs jobs -> noFx { model | jobs <- jobs }
 
 noFx : a -> (a, Effects b)
@@ -50,31 +48,15 @@ updateJobs model =
     Just config -> getJobs config
                      |> Effects.map (FoundJobs << Maybe.withDefault [])
 
-getJobs : Jenkins.Config -> Effects (Maybe (List Job))
-getJobs config =
-  List.map (getBranchNameForJob config) config.jobNames
-   |> Task.sequence
-   |> Task.toMaybe
-   |> Task.map (Maybe.map (List.filterMap identity))
-   |> Effects.task
+applyNewBranchName : Model -> (Model, Effects Action)
+applyNewBranchName model =
+  let
+    newModel = { model | branchName <- ""}
+    effect = Effects.none
+  in
+    (newModel, effect)
 
-getBranchNameForJob : Jenkins.Config -> String -> Task.Task Http.Error (Maybe Job)
-getBranchNameForJob config jobName =
-  Http.getString (String.join "/" [config.serverURL, "view/All/job", jobName, "config.xml"])
-    |> Task.toMaybe
-    |> Task.map (Maybe.map (Job jobName) << extractBranchName)
-
-
-extractBranchName : Maybe String -> Maybe String
-extractBranchName xml =
-  case xml of
-    Nothing -> Nothing
-    Just input ->
-      let regex = Regex.regex "<hudson.plugins.git.BranchSpec><name>(.*?)</name></hudson.plugins.git.BranchSpec>" in
-      Regex.find (Regex.AtMost 1) regex input -- [RegexMatch]
-        |> List.concatMap .submatches  -- [Just a]
-        |> List.filterMap identity
-        |> List.head
+-- VIEWS
 
 view : Address Action -> Model -> Html
 view address model =
@@ -150,6 +132,8 @@ settingsLinkView address =
   div [] [
     a [ href "options.html?show_back_link" ] [ text "Settings" ]
   ]
+
+-- APP INITIALIZATION
 
 port getStorage : Maybe Jenkins.Config
 
