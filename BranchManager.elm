@@ -1,6 +1,6 @@
 module BranchManager where
 
-import Jenkins exposing (Config, Job, emptyConfig, getJobs)
+import Jenkins exposing (Config, Job, emptyConfig, getJobs, updateJobConfigs)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -33,10 +33,11 @@ update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
     NoOp -> noFx model
-    EditedBranchName name -> noFx { model | branchName <- name }
+    EditedBranchName name -> noFx { model | branchName = name }
     TriggerBuild name -> noFx model
     ApplyBranchName -> applyNewBranchName model
-    FoundJobs jobs -> noFx { model | jobs <- jobs }
+    BranchUpdated result -> noFx model
+    FoundJobs jobs -> noFx { model | jobs = jobs }
 
 noFx : a -> (a, Effects b)
 noFx m = (m, Effects.none)
@@ -51,7 +52,7 @@ updateJobs model =
 applyNewBranchName : Model -> (Model, Effects Action)
 applyNewBranchName model =
   let
-    newModel = { model | branchName <- ""}
+    newModel = { model | branchName = ""}
     effect = Effects.none
   in
     (newModel, effect)
@@ -137,13 +138,15 @@ settingsLinkView address =
 
 port getStorage : Maybe Jenkins.Config
 
-app = let initialModel = { config = getStorage, branchName = "", jobs = [] } in
-  StartApp.start
-      { init = (initialModel, updateJobs initialModel)
-      , update = update
-      , view = view
-      , inputs = []
-      }
+app = let
+    initialModel = { config = getStorage, branchName = "", jobs = [] }
+  in
+    StartApp.start
+        { init = (initialModel, updateJobs initialModel)
+        , update = update
+        , view = view
+        , inputs = []
+        }
 
 main = app.html
 
