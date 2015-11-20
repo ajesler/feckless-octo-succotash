@@ -1,12 +1,10 @@
 module OptionsEditor where
 
+import Common exposing (..)
 import Jenkins
-import Debug
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Http
-import Json.Decode as Json exposing ((:=))
 import Signal exposing (Signal, Address)
 import Task
 import Effects exposing (Effects, Never)
@@ -33,10 +31,10 @@ update : Action -> JenkinsConfig -> (JenkinsConfig, Effects Action)
 update action model =
   case action of
     NoOp -> noFx model
-    SetServerURL url -> noFx { model | serverURL <- url }
-    AddJobName name -> noFx { model | jobNames <- (List.append model.jobNames [name]) }
-    DeleteJobName name -> noFx { model | jobNames <- List.filter (\jobname -> jobname /= name) model.jobNames }
-    SetBuildOnBranchChange willTriggerBuild -> noFx { model | buildOnBranchChange <- willTriggerBuild }
+    SetServerURL url -> noFx { model | serverURL = url }
+    AddJobName name -> noFx { model | jobNames = (List.append model.jobNames [name]) }
+    DeleteJobName name -> noFx { model | jobNames = List.filter (\jobname -> jobname /= name) model.jobNames }
+    SetBuildOnBranchChange willTriggerBuild -> noFx { model | buildOnBranchChange = willTriggerBuild }
 
 noFx : a -> (a, Effects b)
 noFx m = (m, Effects.none)
@@ -85,17 +83,6 @@ jobNameView address jobname =
         [ span [] [ text jobname ]
         , button [ onClick address (DeleteJobName jobname) ] [ text "delete" ]
         ]
-
-onEnter : Address a -> a -> Attribute
-onEnter address value =
-    on "keydown"
-      (Json.customDecoder keyCode is13)
-      (\_ -> Signal.message address value)
-
-
-is13 : Int -> Result String ()
-is13 code =
-  if code == 13 then Ok () else Err "not the right key code"
 
 ------------------------------------------------------------------------------
 -- Backend interaction

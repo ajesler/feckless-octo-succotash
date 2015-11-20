@@ -43,23 +43,25 @@ getJobs config =
    |> Task.map (Maybe.map (List.filterMap identity))
    |> Effects.task
 
-updateJobConfigs : Config -> String -> Effects (Maybe (List String))
-updateJobConfigs config branchName =
-  List.map (updateJobConfig config branchName) config.jobNames
+updateJobConfigs : Config -> String -> (List Job) -> Effects (Maybe (List Job))
+updateJobConfigs config branchName jobs =
+  List.map (updateJobConfig config branchName) jobs
     |> Task.sequence
-    |> Task.toMaybe -- Maybe (List String)
+    |> Task.toMaybe
     |> Effects.task
 
-updateJobConfig : Config -> String -> String -> Task Http.Error String
-updateJobConfig config branchName jobName =
+updateJobConfig : Config -> String -> Job -> Task Http.Error Job
+updateJobConfig config branchName job =
   let
-    configUrl = jobConfigUrl config jobName
+    configUrl = jobConfigUrl config job.name
   in
     jobConfigString configUrl
       `andThen` \xml ->
     succeed (replaceBranchName xml branchName)
       `andThen` \updatedXml ->
     postJobConfigString configUrl updatedXml
+      `andThen`
+    (succeed << always (Job job.name branchName))
 
 getBranchNameForJob : Config -> String -> Task.Task Http.Error (Maybe Job)
 getBranchNameForJob config jobName =

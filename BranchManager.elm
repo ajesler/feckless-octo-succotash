@@ -26,7 +26,7 @@ type Action
   | EditedBranchName String
   | TriggerBuild String
   | ApplyBranchName
-  | JobsUpdated (List String)
+  | JobsUpdated (Maybe (List Job))
   | FoundJobs (List Job)
 
 update : Action -> Model -> (Model, Effects Action)
@@ -36,7 +36,10 @@ update action model =
     EditedBranchName name -> noFx { model | branchName = name }
     TriggerBuild name -> noFx model
     ApplyBranchName -> applyNewBranchName model
-    JobsUpdated jobs -> noFx model
+    JobsUpdated jobs ->
+      case jobs of
+        Nothing -> noFx { model | branchName = "" }
+        Just jobList -> noFx { model | jobs = jobList, branchName = "" } -- TODO this should merge jobs, not replace
     FoundJobs jobs -> noFx { model | jobs = jobs }
 
 noFx : a -> (a, Effects b)
@@ -55,11 +58,10 @@ applyNewBranchName model =
     Nothing -> (model, Effects.none)
     Just config ->
       let
-        newModel = { model | branchName = ""}
-        effect = updateJobConfigs config model.branchName
-          |> Effects.map  (JobsUpdated << Maybe.withDefault [])
+        effect = updateJobConfigs config model.branchName model.jobs
+          |> Effects.map (JobsUpdated)
       in
-        (newModel, effect)
+        (model, effect)
 
 -- VIEWS
 
@@ -72,14 +74,13 @@ view address model =
       ]
       Just config -> div [] [
         headerView address config
-        , div [] [ text (String.join ", " config.jobNames) ]
+        --, div [] [ text (String.join ", " config.jobNames) ]
         , messagesView address model
         , jobsView address model.jobs
         , branchNameInputView address model
       ]
     , settingsLinkView address
   ]
-
 
 headerView : Address Action -> Jenkins.Config -> Html
 headerView address config =
