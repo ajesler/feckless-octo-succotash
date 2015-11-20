@@ -67,21 +67,28 @@ configView address config =
                 , value ""
                 ] []
         ]
-      , div [class "config-option-group"] [
-                label [] [ text "Trigger build on branch change"
-                           , input [ class "form-control"
-                                   , type' "checkbox"
+      , div [class "checkbox"] [ -- config-option-group
+                label [] [ input [ type' "checkbox"
                                    , checked config.buildOnBranchChange
                                    , onClick address (SetBuildOnBranchChange (not config.buildOnBranchChange)) ] []
+                            , text "Trigger build on branch change"
                           ]
                 ]
       ]
 
+--<div class="checkbox">
+--  <label>
+--    <input type="checkbox"> Check me out
+--  </label>
+--</div>
+
 jobNameView : Address Action -> String -> Html
 jobNameView address jobname =
-  li []
-        [ span [] [ text jobname ]
-        , button [ onClick address (DeleteJobName jobname) ] [ text "delete" ]
+  li [ class "job-container" ]
+        [ span [ class "job-name" ] [ text jobname ]
+        , button [
+          class "btn btn-warning btn-xs"
+          , onClick address (DeleteJobName jobname) ] [ text "delete" ]
         ]
 
 ------------------------------------------------------------------------------
