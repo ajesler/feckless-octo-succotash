@@ -7,7 +7,6 @@ import Html.Events exposing (..)
 import Signal exposing (Signal, Address)
 import Task
 import Effects exposing (Effects, Never)
-import String
 import StartApp
 import Task exposing (Task, andThen, mapError, succeed, fail)
 

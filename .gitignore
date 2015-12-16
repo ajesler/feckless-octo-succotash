@@ -1,12 +1,5 @@
 /elm-stuff
-/elm.js
 .DS_Store
-index.html
 
-# ignore elm compiled files
-extension/js/options.js
-extension/js/popup.js
-
-# ignore css and images
-/extension/css
-/extension/images
+/extension
+/src/dependencies

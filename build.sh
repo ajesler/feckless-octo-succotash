@@ -1,7 +1,11 @@
-rm -rf extension/css/*
-cp -r css extension/
-rm -rf extension/images/*
-cp -r images extension/
+./install_dependencies.sh
 
-elm make BranchManager.elm --output extension/js/popup.js
-elm make OptionsEditor.elm --output extension/js/options.js
+rm -rf extension/*
+
+cp -r assets/ extension/
+cp manifest.json extension/manifest.json
+
+elm package install
+
+elm make src/BranchManager.elm --output extension/js/popup.js
+elm make src/OptionsEditor.elm --output extension/js/options.js

@@ -67,7 +67,7 @@ configView address config =
                 , value ""
                 ] []
         ]
-      , div [class "checkbox"] [ -- config-option-group
+      , div [class "checkbox"] [
                 label [] [ input [ type' "checkbox"
                                    , checked config.buildOnBranchChange
                                    , onClick address (SetBuildOnBranchChange (not config.buildOnBranchChange)) ] []
@@ -75,12 +75,6 @@ configView address config =
                           ]
                 ]
       ]
-
---<div class="checkbox">
---  <label>
---    <input type="checkbox"> Check me out
---  </label>
---</div>
 
 jobNameView : Address Action -> String -> Html
 jobNameView address jobname =
