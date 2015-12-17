@@ -1,5 +1,3 @@
-./install_dependencies.sh
-
 rm -rf extension/*
 
 cp -r assets/ extension/

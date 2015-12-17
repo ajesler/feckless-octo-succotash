@@ -9,7 +9,7 @@ import Signal exposing (Signal, Address)
 import Task
 import Effects exposing (Effects, Never)
 import StartApp
-
+import String exposing (isEmpty)
 
 ------------------------------------------------------------------------------
 -- Things we're working with here
@@ -74,6 +74,7 @@ configView address config =
                             , text "Trigger build on branch change"
                           ]
                 ]
+      , backLink
       ]
 
 jobNameView : Address Action -> String -> Html
@@ -85,10 +86,21 @@ jobNameView address jobname =
           , onClick address (DeleteJobName jobname) ] [ text "delete" ]
         ]
 
+backLink : Html
+backLink =
+  if not (String.isEmpty locationSearch) then
+    div [] [
+      a [ href "popup.html" ] [text "Back"]
+    ]
+  else
+    div [] []
+
 ------------------------------------------------------------------------------
 -- Backend interaction
 -- interactions with localStorage to save the model
 ------------------------------------------------------------------------------
+
+port locationSearch : String
 
 port getStorage : Maybe JenkinsConfig
 
