@@ -60,8 +60,26 @@ updateJobConfig config branchName job =
     succeed (replaceBranchName xml branchName)
       `andThen` \updatedXml ->
     postJobConfigString configUrl updatedXml
+      `andThen` \_ ->
+    triggerBuild config job -- will not update the job in UI if this fails..
       `andThen`
     (succeed << always (Job job.name branchName))
+
+triggerBuild : Config -> Job -> Task.Task Http.Error String
+triggerBuild config job =
+  if config.buildOnBranchChange then
+    let
+      request = {
+        verb = "POST"
+        , headers = [("Access-Control-Allow-Credentials", "true")]
+        , url = jobBuildUrl config job.name
+        , body = Http.empty
+      }
+    in
+      Task.mapError promoteError (Http.send Http.defaultSettings request)
+        `andThen` handleResponse succeed
+  else
+    succeed "not triggering a build"
 
 getBranchNameForJob : Config -> String -> Task.Task Http.Error (Maybe Job)
 getBranchNameForJob config jobName =

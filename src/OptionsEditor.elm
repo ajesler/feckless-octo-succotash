@@ -68,12 +68,12 @@ configView address config =
                 ] []
         ]
       , div [class "checkbox"] [
-                label [] [ input [ type' "checkbox"
-                                   , checked config.buildOnBranchChange
-                                   , onClick address (SetBuildOnBranchChange (not config.buildOnBranchChange)) ] []
-                            , text "Trigger build on branch change"
-                          ]
-                ]
+              label [] [ input [ type' "checkbox"
+                               , checked config.buildOnBranchChange
+                               , onClick address (SetBuildOnBranchChange (not config.buildOnBranchChange)) ] []
+                         , text "Trigger build on branch change"
+              ]
+            ]
       , backLink
       ]
 
