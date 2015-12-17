@@ -88,8 +88,8 @@ jobNameView address jobname =
 
 backLink : Html
 backLink =
-  if not (String.isEmpty locationSearch) then
-    div [] [
+  if String.contains "show_back_link" locationSearch then
+    div [ class "navigation-link" ] [
       a [ href "popup.html" ] [text "Back"]
     ]
   else
