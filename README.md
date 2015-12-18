@@ -15,3 +15,5 @@ Manage Jenkins branch configurations, via Chrome.
 * Handle jobs that are disabled on Jenkins.
     * What happens if you try to build a disabled job?
 * Should not be able to set a blank branch name
+* Move the Trigger Build checkbox to popup page? More likely to be used per set?
+* Button next to each job to trigger a build
