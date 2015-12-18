@@ -1,4 +1,4 @@
-module Jenkins (Config, Job, emptyConfig, getJobs, updateJobConfigs) where
+module Jenkins (Config, Job, emptyConfig, getJobs, updateJobEffects) where
 
 import Http exposing (send, empty, defaultSettings
     , Response, Value(..)
@@ -9,7 +9,7 @@ import Effects exposing (Effects, Never)
 import Regex
 
 jenkinsBranchRegex : Regex.Regex
-jenkinsBranchRegex = Regex.regex "<hudson\\.plugins\\.git\\.BranchSpec>\\s+<name>(.*?)</name>\\s+</hudson\\.plugins\\.git\\.BranchSpec>"
+jenkinsBranchRegex = Regex.regex "<hudson\\.plugins\\.git\\.BranchSpec>\\s*<name>(.*?)</name>\\s*</hudson\\.plugins\\.git\\.BranchSpec>"
 
 type alias Config =
   { serverURL : String
@@ -20,6 +20,7 @@ type alias Config =
 type alias Job = {
   name : String
   , branch : String
+  , updateBranch : Bool
 }
 
 type alias JobUpdateResult = {
@@ -43,15 +44,14 @@ getJobs config =
    |> Task.map (Maybe.map (List.filterMap identity))
    |> Effects.task
 
-updateJobConfigs : Config -> String -> (List Job) -> Effects (Maybe (List Job))
-updateJobConfigs config branchName jobs =
-  List.map (updateJobConfig config branchName) jobs
-    |> Task.sequence
+updateJobEffects : Config -> String -> Job -> Effects (Maybe Job)
+updateJobEffects config branch job =
+  updateJob config branch job
     |> Task.toMaybe
     |> Effects.task
 
-updateJobConfig : Config -> String -> Job -> Task Http.Error Job
-updateJobConfig config branchName job =
+updateJob : Config -> String -> Job -> Task Http.Error Job
+updateJob config branchName job =
   let
     configUrl = jobConfigUrl config job.name
   in
@@ -63,7 +63,7 @@ updateJobConfig config branchName job =
       `andThen` \_ ->
     triggerBuild config job -- will not update the job in UI if this fails..
       `andThen`
-    (succeed << always (Job job.name branchName))
+    (succeed << always (Job job.name branchName job.updateBranch))
 
 triggerBuild : Config -> Job -> Task.Task Http.Error String
 triggerBuild config job =
@@ -72,7 +72,7 @@ triggerBuild config job =
       request = {
         verb = "POST"
         , headers = [("Access-Control-Allow-Credentials", "true")]
-        , url = jobBuildUrl config job.name
+        , url = (jobBuildUrl config job.name)
         , body = Http.empty
       }
     in
@@ -85,7 +85,7 @@ getBranchNameForJob : Config -> String -> Task.Task Http.Error (Maybe Job)
 getBranchNameForJob config jobName =
   jobConfigString (jobConfigUrl config jobName)
     |> Task.toMaybe
-    |> Task.map (Maybe.map (Job jobName) << extractBranchName)
+    |> Task.map (Maybe.map (createJob jobName) << extractBranchName)
 
 postJobConfigString : String -> String -> Task.Task Http.Error String
 postJobConfigString url xml =
@@ -112,9 +112,17 @@ jobConfigString url =
       Task.mapError promoteError (Http.send Http.defaultSettings request)
         `andThen` handleResponse succeed
 
+createJob : String -> String -> Job
+createJob jobName branchName =
+  Job jobName branchName True
+
 jobConfigUrl : Config -> String -> String
 jobConfigUrl config jobName =
   String.join "/" [config.serverURL, "view/All/job", jobName, "config.xml"]
+
+jobBuildUrl : Config -> String -> String
+jobBuildUrl config jobName =
+  String.join "/" [config.serverURL, "job", jobName, "build"]
 
 extractBranchName : Maybe String -> Maybe String
 extractBranchName xml =
@@ -126,9 +134,13 @@ extractBranchName xml =
         |> List.filterMap identity
         |> List.head
 
+buildNewMatchSection : String -> String
+buildNewMatchSection branch =
+  "<hudson.plugins.git.BranchSpec><name>" ++ branch ++ "</name></hudson.plugins.git.BranchSpec>"
+
 replaceBranchName : String -> String -> String
 replaceBranchName xml branchName =
-  Regex.replace Regex.All jenkinsBranchRegex (\_ -> branchName) xml
+  Regex.replace Regex.All jenkinsBranchRegex (\_ -> buildNewMatchSection branchName) xml
 
 -- FROM https://github.com/evancz/elm-http/blob/master/src/Http.elm
 

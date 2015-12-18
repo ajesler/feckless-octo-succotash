@@ -1,6 +1,6 @@
 module BranchManager where
 
-import Jenkins exposing (Config, Job, emptyConfig, getJobs, updateJobConfigs)
+import Jenkins exposing (Config, Job, emptyConfig, getJobs, updateJobEffects)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -13,9 +13,9 @@ import Task exposing (Task, andThen, mapError, succeed, fail)
 -- DATA TYPES
 
 type alias Model = {
-  config : Maybe Jenkins.Config
+  config : Maybe Config
   , branchName : String
-  , jobs : List Jenkins.Job
+  , jobs : List Job
 }
 
 -- ACTIONS
@@ -23,9 +23,10 @@ type alias Model = {
 type Action
   = NoOp
   | EditedBranchName String
-  | TriggerBuild String
+  | ToggleJob String
   | ApplyBranchName
   | JobsUpdated (Maybe (List Job))
+  | JobUpdated (Maybe Job)
   | FoundJobs (List Job)
 
 update : Action -> Model -> (Model, Effects Action)
@@ -33,13 +34,33 @@ update action model =
   case action of
     NoOp -> noFx model
     EditedBranchName name -> noFx { model | branchName = name }
-    TriggerBuild name -> noFx model
+    ToggleJob name ->
+      let toggleUpdateBranch job =
+        if job.name == name
+          then { job | updateBranch = not job.updateBranch }
+          else job
+      in
+        noFx { model | jobs = List.map toggleUpdateBranch model.jobs }
     ApplyBranchName -> applyNewBranchName model
     JobsUpdated jobs ->
       case jobs of
-        Nothing -> noFx { model | branchName = "" }
-        Just jobList -> noFx { model | jobs = jobList, branchName = "" } -- TODO this should merge jobs, not replace
-    FoundJobs jobs -> noFx { model | jobs = jobs }
+        Nothing -> noFx model
+        Just updatedJobs ->
+          let
+            unchangedJobs = List.filter (\j -> not (List.member j updatedJobs)) model.jobs
+            mergedJobs = List.append unchangedJobs updatedJobs |> List.sortBy .name
+          in
+            noFx { model | jobs = mergedJobs }
+    JobUpdated job ->
+      case job of
+        Nothing -> noFx model
+        Just updatedJob ->
+          let
+            unchangedJobs = List.filter (\j -> j.name /= updatedJob.name) model.jobs
+            mergedJobs = updatedJob :: unchangedJobs |> List.sortBy .name
+          in
+            noFx { model | jobs = mergedJobs }
+    FoundJobs jobs -> noFx { model | jobs = List.sortBy .name jobs }
 
 noFx : a -> (a, Effects b)
 noFx m = (m, Effects.none)
@@ -54,13 +75,15 @@ updateJobs model =
 applyNewBranchName : Model -> (Model, Effects Action)
 applyNewBranchName model =
   case model.config of
-    Nothing -> (model, Effects.none)
+    Nothing -> ({ model | branchName = "" }, Effects.none)
     Just config ->
       let
-        effect = updateJobConfigs config model.branchName model.jobs
-          |> Effects.map (JobsUpdated)
+        jobsToUpdate = List.filter (\job -> job.updateBranch) model.jobs
+        effect = List.map (updateJobEffects config model.branchName) jobsToUpdate
+                    |> List.map (Effects.map (JobUpdated))
+                    |> Effects.batch
       in
-        (model, effect)
+        ({ model | branchName = "" }, effect)
 
 -- VIEWS
 
@@ -98,7 +121,8 @@ jobsView : Address Action -> List Job -> Html
 jobsView address jobs =
   table [class "table"] ([
     tr [] [
-      th [] [ text "Job Name" ]
+      th [] []
+      , th [] [ text "Job Name" ]
       , th [] [ text "Branch" ]
     ]
   ] ++ (List.map (jobRowView address) jobs))
@@ -106,7 +130,12 @@ jobsView address jobs =
 jobRowView : Address Action -> Job -> Html
 jobRowView address job =
   tr [] [
-    td [] [ text job.name ]
+    td [] [
+      input [ type' "checkbox"
+              , checked job.updateBranch
+              , onClick address (ToggleJob job.name) ] []
+    ]
+    , td [] [ text job.name ]
     , td [] [ text job.branch ]
   ]
 
