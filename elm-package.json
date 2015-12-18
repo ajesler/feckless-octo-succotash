@@ -1,8 +1,8 @@
 {
     "version": "0.1.0",
-    "summary": "Jenkins build branch switcher",
+    "summary": "Jenkins job branch updater",
     "repository": "https://github.com/ajesler/feckless-octo-succotash.git",
-    "license": "BSD3",
+    "license": "MIT",
     "source-directories": [
         "src"
     ],
