@@ -1,5 +1,6 @@
 module BranchManager where
 
+import Common exposing (onEnter)
 import Jenkins exposing (Config, Job, emptyConfig, getJobs, updateJobEffects)
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -9,6 +10,7 @@ import Task
 import Effects exposing (Effects, Never)
 import StartApp
 import Task exposing (Task, andThen, mapError, succeed, fail)
+import String exposing (isEmpty)
 
 -- DATA TYPES
 
@@ -77,13 +79,16 @@ applyNewBranchName model =
   case model.config of
     Nothing -> ({ model | branchName = "" }, Effects.none)
     Just config ->
-      let
-        jobsToUpdate = List.filter (\job -> job.updateBranch) model.jobs
-        effect = List.map (updateJobEffects config model.branchName) jobsToUpdate
-                    |> List.map (Effects.map (JobUpdated))
-                    |> Effects.batch
-      in
-        ({ model | branchName = "" }, effect)
+      if isEmpty model.branchName then
+        noFx { model | branchName = "" }
+      else
+        let
+          jobsToUpdate = List.filter (\job -> job.updateBranch) model.jobs
+          effect = List.map (updateJobEffects config model.branchName) jobsToUpdate
+                      |> List.map (Effects.map (JobUpdated))
+                      |> Effects.batch
+        in
+          ({ model | branchName = "" }, effect)
 
 -- VIEWS
 
@@ -152,6 +157,7 @@ branchNameInputView address model =
             , class "form-control"
             , placeholder "branch-name"
             , value model.branchName
+            , onEnter address ApplyBranchName
             , (on "input" targetValue (Signal.message address << EditedBranchName)) ] []
       , span [class "input-group-btn"] [
         button [id "updateButton"
