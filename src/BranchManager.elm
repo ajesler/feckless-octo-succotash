@@ -1,7 +1,7 @@
 module BranchManager where
 
 import Common exposing (onEnter)
-import Jenkins exposing (Config, Job, emptyConfig, getJobs, updateJobEffects)
+import Jenkins exposing (Config, Job, emptyConfig, getJobs, updateJobEffects, jobUrl)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -103,7 +103,7 @@ view address model =
         headerView address config
         --, div [] [ text (String.join ", " config.jobNames) ]
         , messagesView address model
-        , jobsView address model.jobs
+        , jobsView address config model.jobs
         , branchNameInputView address model
       ]
     , settingsLinkView address
@@ -122,25 +122,25 @@ headerView address config =
       ]
   ]
 
-jobsView : Address Action -> List Job -> Html
-jobsView address jobs =
+jobsView : Address Action -> Jenkins.Config -> List Job -> Html
+jobsView address config jobs =
   table [class "table"] ([
     tr [] [
       th [] []
       , th [] [ text "Job Name" ]
       , th [] [ text "Branch" ]
     ]
-  ] ++ (List.map (jobRowView address) jobs))
+  ] ++ (List.map (jobRowView address config) jobs))
 
-jobRowView : Address Action -> Job -> Html
-jobRowView address job =
+jobRowView : Address Action -> Jenkins.Config -> Job -> Html
+jobRowView address config job =
   tr [] [
     td [] [
       input [ type' "checkbox"
               , checked job.updateBranch
               , onClick address (ToggleJob job.name) ] []
     ]
-    , td [] [ text job.name ]
+    , td [] [ a [ href (jobUrl config job.name) ] [ text job.name ] ]
     , td [] [ text job.branch ]
   ]
 

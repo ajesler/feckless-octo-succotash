@@ -1,4 +1,4 @@
-module Jenkins (Config, Job, emptyConfig, getJobs, updateJobEffects) where
+module Jenkins (Config, Job, emptyConfig, getJobs, updateJobEffects, jobUrl) where
 
 import Http exposing (send, empty, defaultSettings
     , Response, Value(..)
@@ -115,6 +115,10 @@ jobConfigString url =
 createJob : String -> String -> Job
 createJob jobName branchName =
   Job jobName branchName True
+
+jobUrl : Config -> String -> String
+jobUrl config jobName =
+  String.join "/" [config.serverURL, "view/All/job", jobName]
 
 jobConfigUrl : Config -> String -> String
 jobConfigUrl config jobName =
