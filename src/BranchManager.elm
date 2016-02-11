@@ -135,7 +135,7 @@ jobsView address config jobs =
 jobRowView : Address Action -> Jenkins.Config -> Job -> Html
 jobRowView address config job =
   tr [] [
-    td [] [
+    td [ class "build-checkbox" ] [
       input [ type' "checkbox"
               , checked job.updateBranch
               , onClick address (ToggleJob job.name) ] []
@@ -169,7 +169,7 @@ branchNameInputView address model =
 
 settingsLinkView : Address Action -> Html
 settingsLinkView address =
-  div [] [
+  div [ class "settings-link" ] [
     a [ href "options.html?show_back_link" ] [ text "Settings" ]
   ]
 

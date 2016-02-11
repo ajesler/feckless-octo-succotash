@@ -1,6 +1,6 @@
 body {
-  width: 400px;
-  padding: 30px;
+  width: 600px;
+  padding: 20px 30px 10px 30px;
 }
 
 #popup {
@@ -8,8 +8,8 @@ body {
 }
 
 #icon {
-   height: 48px;
-   width: 48px;
+  height: 48px;
+  width: 48px;
 }
 
 #messages {
@@ -23,4 +23,12 @@ body {
 
 .job-name {
   margin-right: 10px;
+}
+
+.build-checkbox {
+  padding-right: 10px;
+}
+
+.settings-link {
+  margin-top: 10px;
 }
