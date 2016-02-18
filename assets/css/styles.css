@@ -17,6 +17,12 @@ body {
   padding: 5px;
 }
 
+.jobs-table {
+  border-collapse:separate;
+  border-spacing:0 5px;
+  margin-bottom: 10px;
+}
+
 .job-container {
   margin: 5px;
 }
@@ -26,7 +32,9 @@ body {
 }
 
 .build-checkbox {
-  padding-right: 10px;
+}
+
+.build-button {
 }
 
 .settings-link {

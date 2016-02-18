@@ -1,4 +1,4 @@
-module Jenkins (Config, Job, emptyConfig, getJobs, updateJobEffects, jobUrl) where
+module Jenkins (Config, Job, emptyConfig, getJobs, updateJobEffects, jobUrl, triggerBuild) where
 
 import Http exposing (send, empty, defaultSettings
     , Response, Value(..)

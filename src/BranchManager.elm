@@ -1,7 +1,7 @@
 module BranchManager where
 
 import Common exposing (onEnter)
-import Jenkins exposing (Config, Job, emptyConfig, getJobs, updateJobEffects, jobUrl)
+import Jenkins exposing (Config, Job, emptyConfig, getJobs, updateJobEffects, jobUrl, triggerBuild)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -27,6 +27,7 @@ type Action
   | EditedBranchName String
   | ToggleJob String
   | ApplyBranchName
+  | TriggerBuild Job
   | JobsUpdated (Maybe (List Job))
   | JobUpdated (Maybe Job)
   | FoundJobs (List Job)
@@ -44,6 +45,7 @@ update action model =
       in
         noFx { model | jobs = List.map toggleUpdateBranch model.jobs }
     ApplyBranchName -> applyNewBranchName model
+    TriggerBuild job -> triggerJobBuild model job
     JobsUpdated jobs ->
       case jobs of
         Nothing -> noFx model
@@ -90,6 +92,19 @@ applyNewBranchName model =
         in
           ({ model | branchName = "" }, effect)
 
+triggerJobBuild : Model -> Job -> (Model, Effects Action)
+triggerJobBuild model job =
+  case model.config of
+    Nothing -> noFx model
+    Just config ->
+      let
+        effect = triggerBuild config job
+          |> Task.toMaybe
+          |> Task.map (\_ -> NoOp)
+          |> Effects.task
+      in
+        (model, effect)
+
 -- VIEWS
 
 view : Address Action -> Model -> Html
@@ -124,10 +139,11 @@ headerView address config =
 
 jobsView : Address Action -> Jenkins.Config -> List Job -> Html
 jobsView address config jobs =
-  table [class "table"] ([
+  table [class "jobs-table"] ([
     tr [] [
-      th [] []
-      , th [] [ text "Job Name" ]
+      th [ width 30 ] []
+      , th [ width 20 ] []
+      , th [ width 150 ] [ text "Job Name" ]
       , th [] [ text "Branch" ]
     ]
   ] ++ (List.map (jobRowView address config) jobs))
@@ -135,12 +151,19 @@ jobsView address config jobs =
 jobRowView : Address Action -> Jenkins.Config -> Job -> Html
 jobRowView address config job =
   tr [] [
-    td [ class "build-checkbox" ] [
-      input [ type' "checkbox"
+    td [] [
+      button [ class "build-button btn btn-primary btn-xs"
+               , title ("Build " ++ job.name)
+               , onClick address (TriggerBuild job) ] [ text "B" ]
+    ]
+    , td [ class "build-checkbox" ] [
+        input [ type' "checkbox"
+              , title ("Update " ++ job.name ++ " when 'Update Jobs' is clicked")
               , checked job.updateBranch
               , onClick address (ToggleJob job.name) ] []
     ]
-    , td [] [ a [ href (jobUrl config job.name) ] [ text job.name ] ]
+    , td [] [ a [ href (jobUrl config job.name)
+                  , target "_blank" ] [ text job.name ] ]
     , td [] [ text job.branch ]
   ]
 
@@ -160,7 +183,7 @@ branchNameInputView address model =
             , onEnter address ApplyBranchName
             , (on "input" targetValue (Signal.message address << EditedBranchName)) ] []
       , span [class "input-group-btn"] [
-        button [id "updateButton"
+        button [ id "updateButton"
                 , class "btn btn-primary"
                 , onClick address ApplyBranchName ] [ text "Update Jobs" ]
       ]
