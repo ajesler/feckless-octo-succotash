@@ -1,7 +1,7 @@
 {
     "version": "0.1.0",
     "summary": "Jenkins job branch updater",
-    "repository": "https://github.com/ajesler/feckless-octo-succotash.git",
+    "repository": "https://github.com/ajesler/jenkins-job-git-branch-extension.git",
     "license": "MIT",
     "source-directories": [
         "src"
