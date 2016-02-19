@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Jenkins Job Git Branch Manager",
-  "description": "Provides a quick way to change the git branch of a Jenkins job or set of jobs.",
+  "description": "Provides a quick way to change the git branch of a Jenkins job or set of jobs and to trigger a build.",
   "version": "0.1",
   "homepage_url": "https://github.com/ajesler/jenkins-job-git-branch-extension",
   "icons": { "48": "images/icon48.png" },
