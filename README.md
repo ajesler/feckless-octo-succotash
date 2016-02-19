@@ -22,21 +22,6 @@ The extension is written in [Elm](http://elm-lang.org/), which is compiled to Ja
 * **storage** Required to store the Jenkins URL and job names
 * **https://*/** and **http://*/** Required to access the Jenkins URL
 
-
-## TODO
-
-* Formatting of Options page - Job name header missing, add job form looks janky
-* Check server is accessible when the extension is loaded. Make sure no further auth required.
-* Show errors when a request to read or update a branch config fails
-* If no branches listed in settings, suggest adding some
-* Require enter to submit on new branch name. Losing focus submits the change.
-* Should not be able to set a blank branch name
-* Move the Trigger Build checkbox to popup page? More likely to be used per set?
-* Show build state (failed|succeeded|in progress) next to each job
-* Handle jobs that are disabled on Jenkins.
-    * What happens if you try to build a disabled job?
-
-
 ## Attributions
 
 The extension icon is courtesy of [Jenkins](https://jenkins-ci.org/), distributed under the Creative Commons Attribution-ShareAlike 3.0 Unported
