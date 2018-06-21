@@ -126,13 +126,13 @@ view address model =
 
 headerView : Address Action -> Jenkins.Config -> Html
 headerView address config =
-  div [class "row text-center"] [
+  div [class "text-center"] [
     a [ href config.serverURL
       , target "_blank"
       , id "serverLink" ] [
         img [ id "icon"
             , class "center-block"
-            , src "images/icon48.png"
+            , src "images/icon256.png"
             ] []
       ]
   ]
@@ -141,30 +141,30 @@ jobsView : Address Action -> Jenkins.Config -> List Job -> Html
 jobsView address config jobs =
   table [class "jobs-table"] ([
     tr [] [
-      th [ width 30 ] []
-      , th [ width 20 ] []
-      , th [ width 150 ] [ text "Job Name" ]
+      th [] [ text "Job Name" ]
       , th [] [ text "Branch" ]
+      , th [ class "text-center" ] [ text "Selected" ]
+      , th [ class "text-right" ] [ text "Actions" ]
     ]
   ] ++ (List.map (jobRowView address config) jobs))
 
 jobRowView : Address Action -> Jenkins.Config -> Job -> Html
 jobRowView address config job =
   tr [] [
-    td [] [
-      button [ class "build-button btn btn-primary btn-xs"
-               , title ("Build " ++ job.name)
-               , onClick address (TriggerBuild job) ] [ text "B" ]
-    ]
-    , td [ class "build-checkbox" ] [
+    td [] [ a [ href (jobUrl config job.name)
+                  , target "_blank" ] [ text job.name ] ]
+    , td [] [ text job.branch ]
+    , td [ align "center", class "build-checkbox" ] [
         input [ type' "checkbox"
-              , title ("Update " ++ job.name ++ " when 'Update Jobs' is clicked")
+              , title ("Update " ++ job.name ++ " when 'Update Selected Jobs' is clicked")
               , checked job.updateBranch
               , onClick address (ToggleJob job.name) ] []
     ]
-    , td [] [ a [ href (jobUrl config job.name)
-                  , target "_blank" ] [ text job.name ] ]
-    , td [] [ text job.branch ]
+    , td [ align "right" ] [
+      button [ class "build-button btn btn-primary btn-xs"
+               , title ("Build " ++ job.name)
+               , onClick address (TriggerBuild job) ] [ text "Build" ]
+    ]
   ]
 
 messagesView : Address Action -> Model -> Html
@@ -185,7 +185,7 @@ branchNameInputView address model =
       , span [class "input-group-btn"] [
         button [ id "updateButton"
                 , class "btn btn-primary"
-                , onClick address ApplyBranchName ] [ text "Update Jobs" ]
+                , onClick address ApplyBranchName ] [ text "Update Selected Jobs" ]
       ]
     ]
   ]
