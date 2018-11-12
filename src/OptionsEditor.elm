@@ -51,7 +51,7 @@ configView address config =
   div []
       [
        div [ class "config-option-group" ]
-           [ label [] [ text "Jenkins server" ]
+           [ label [] [ text "Jenkins Server" ]
            , input [ class "form-control"
                    , placeholder "Jenkins server root URL"
                    , type' "url"
@@ -59,7 +59,7 @@ configView address config =
                    , on "change" targetValue (Signal.message address << SetServerURL)] []
            ]
       , div [class "config-option-group"]
-        [ ul [] (List.map (\n -> li [] [jobNameView address n]) config.jobNames)
+        [ ul [] (List.map (\n -> li [ class "job-container" ] [jobNameView address n]) config.jobNames)
         , input [ class "form-control"
                 , placeholder "Job name to add"
                 , type' "text"
@@ -79,12 +79,12 @@ configView address config =
 
 jobNameView : Address Action -> String -> Html
 jobNameView address jobname =
-  li [ class "job-container" ]
-        [ span [ class "job-name" ] [ text jobname ]
-        , button [
-          class "btn btn-warning btn-xs"
-          , onClick address (DeleteJobName jobname) ] [ text "delete" ]
-        ]
+  span []
+    [ span [ class "job-name" ] [ text jobname ]
+    , button [
+      class "btn btn-warning btn-xs btn-delete"
+      , onClick address (DeleteJobName jobname) ] [ text "Delete" ]
+    ]
 
 backLink : Html
 backLink =

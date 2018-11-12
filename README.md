@@ -4,6 +4,8 @@ The projects purpose is to provide a quick way to change the git branch a Jenkin
 
 Jenkins auth is handled by assuming you have logged into the server and the browser has access to the auth cookie.
 
+![Screenshot](/screenshot.png?raw=true)
+
 
 ## Usage
 
@@ -12,9 +14,12 @@ The extension needs a URL to the Jenkins server and a set of job names. The URL 
 
 ## Building
 
-The extension is written in [Elm](http://elm-lang.org/), which is compiled to Javascript. In order to build this extension, you will need to have Elm installed.
+The extension is written in [Elm](http://elm-lang.org/), which is compiled to Javascript. In order to build this extension, you will need to have Elm (0.16.x) installed.
+```
+npm install -g elm@0.16.0
+```
 
-`./build.sh` will populate the `extension` directory with the required files. You can the navigate to `chrome://extensions` and click "Load unpacked extension", pointing Chrome at the `extension` directory.
+`./build.sh` will populate the `extension` directory with the required files. You can the navigate to [`chrome://extensions`](chrome://extensions) and click "Load unpacked extension", pointing Chrome at the `extension` directory.
 
 
 ## Permissions
